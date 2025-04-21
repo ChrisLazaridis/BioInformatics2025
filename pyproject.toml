@@ -1,0 +1,23 @@
+[project]
+name = "bioinformatics"
+version = "0.1.0"
+description = "Environment used for dependency management for the course of Bioinfrmatics. 2025 @ Unipi"
+authors = [
+  { name = "Christos Lazaridis",      email = "clazaridis7@gmail.com" },
+  { name = "Athanasios Kalogeropoulos", email = "nkalogeropoylos@yahoo.gr" }
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy (>=2.2.5,<3.0.0)",
+    "pandas (>=2.2.3,<3.0.0)",
+    "hmmlearn (>=0.3.3,<0.4.0)",
+    "pomegranate (>=1.1.2,<2.0.0)",
+    "matplotlib (>=3.10.1,<4.0.0)",
+    "biopython (>=1.85,<2.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
