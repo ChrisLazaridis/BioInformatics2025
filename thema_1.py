@@ -54,22 +54,6 @@ def save_fasta(seqs: List[str], filename: str) -> bool:
         print(f"Error writing to file {filename}: {e}")
         return False
 
-def save_txt(seqs: List[str], filename: str) -> bool:
-    """
-    Αποθηκεύει τις αλληλουχίες σε αρχείο txt.
-    :param seqs: Λίστα αλληλουχιών
-    :param filename: Όνομα αρχείου
-    :return: True αν η αποθήκευση ήταν επιτυχής, αλλιώς False
-    """
-    try:
-        with open(filename, 'w') as f:
-            for i, s in enumerate(seqs, 1):
-                f.write(f"seq{i}: {s}\n")
-        return True
-    except IOError as e:
-        print(f"Error writing to file {filename}: {e}")
-        return False
-
 
 def generate_sequence ( ) -> str :
     """
@@ -105,12 +89,6 @@ if save_fasta( datasetB, "auxiliary/datasetB.fasta" ):
     print("datasetB αποθηκεύτηκε σε datasetB.fasta")
 if save_fasta( datasetC, "auxiliary/datasetC.fasta" ):
     print("datasetC αποθηκεύτηκε σε datasetC.fasta")
-if save_txt( datasetA, "auxiliary/datasetA.txt" ):
-    print("datasetA αποθηκεύτηκε σε datasetA.txt")
-if save_txt( datasetB, "auxiliary/datasetB.txt" ):
-    print("datasetB αποθηκεύτηκε σε datasetB.txt")
-if save_txt( datasetC, "auxiliary/datasetC.txt" ):
-    print("datasetC αποθηκεύτηκε σε datasetC.txt")
 
 # print statistics for each dataset
 def print_statistics(dataset: List[str], name: str):
