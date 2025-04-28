@@ -15,6 +15,11 @@ def align_seq(
 ) -> Tuple[float, List[List[float]], str, str]:
     """
     Custom global alignment: add match/mismatch scores, subtract gap penalties.
+    :param seq1: First sequence
+    :param seq2: Second sequence
+    :param lookup: Lookup table for match/mismatch scores
+    :param gap_penalty: Gap penalty
+    :return: Tuple of (alignment score, DP table, aligned seq1, aligned seq2)
     """
     n, m = len(seq1), len(seq2)
     dp = [[0.0] * (m + 1) for _ in range(n + 1)]
@@ -47,6 +52,12 @@ def align_seq(
 
 
 def compute_kmer_freq(seq: str, k: int) -> Dict[str, int]:
+    """
+    Compute k-mer frequencies in a sequence.
+    :param seq: sequence
+    :param k: length of k
+    :return:  k-mer frequencies
+    """
     freqs: Dict[str, int] = {}
     for i in range(len(seq) - k + 1):
         kmer = seq[i:i + k]
@@ -55,6 +66,12 @@ def compute_kmer_freq(seq: str, k: int) -> Dict[str, int]:
 
 
 def cosine_distance(f1: Dict[str, int], f2: Dict[str, int]) -> float:
+    """
+    Compute cosine distance between two frequency dictionaries.
+    :param f1: Frequency dictionary of the first sequence
+    :param f2: Frequency dictionary of the second sequence
+    :return: Cosine distance (1 - cosine similarity)
+    """
     keys = set(f1) | set(f2)
     dot = sum(f1.get(k, 0) * f2.get(k, 0) for k in keys)
     norm1 = math.sqrt(sum(v * v for v in f1.values()))
@@ -63,6 +80,12 @@ def cosine_distance(f1: Dict[str, int], f2: Dict[str, int]) -> float:
 
 
 def compute_distance_matrix(seqs: List[str], k: int) -> List[List[float]]:
+    """
+    Compute distance matrix for a list of sequences using k-mer frequencies.
+    :param seqs: List of sequences
+    :param k:  length of k
+    :return:  Distance matrix
+    """
     n = len(seqs)
     freqs = [compute_kmer_freq(s, k) for s in seqs]
     mat = [[0.0] * n for _ in range(n)]
@@ -75,7 +98,11 @@ def compute_distance_matrix(seqs: List[str], k: int) -> List[List[float]]:
 
 def propagate_alignment(aligned_cons: str, aligned_seqs: List[str]) -> List[str]:
     """
-    Propagate consensus alignment gaps onto each sequence.
+    Propagate gaps in the consensus alignment to the original sequences.
+    :param aligned_cons: Aligned consensus sequence
+    :param aligned_seqs: List of aligned sequences
+    :return: List of aligned sequences with gaps propagated
+    
     """
     new_aligned: List[str] = []
     for seq in aligned_seqs:
@@ -99,6 +126,16 @@ def consensus_sequence(
     next_symbol_id: List[int],
     next_symbol_score: float = 0.5
 ) -> str:
+    """
+    Create a consensus sequence from two aligned sequences.
+    :param aln1: First aligned sequence
+    :param aln2: Second aligned sequence
+    :param lookup: Lookup table for match/mismatch scores
+    :param symbol_map: Dictionary mapping consensus symbols to sets of matched characters
+    :param next_symbol_id: List containing next available symbol ID (modified in-place)
+    :param next_symbol_score: Score to use for newly created consensus symbols
+    :return: Consensus sequence string
+    """
     cons: List[str] = []
     for a, b in zip(aln1, aln2):
         if a == b:
@@ -131,12 +168,18 @@ def consensus_sequence(
 
 
 def hierarchical_msa(seqs: List[str], k: int = 3) -> List[str]:
+    """
+    Custom hierarchical MSA using a distance matrix and a greedy approach.
+    :param seqs: List of sequences
+    :param k:  length of k for k-mer frequency computation
+    :return:  List of aligned sequences
+    """
     lookup: Dict[Tuple[str, str], float] = {}
     symbol_map: Dict[str, Set[str]] = {}
     for x in "ACGT":
         symbol_map[x] = {x}
         for y in "ACGT":
-            lookup[(x, y)] = 1.0 if x == y else 0.0
+            lookup[(x, y)] = 1.0 if x == y else -1.0
     next_symbol_id = [1]
 
     clusters = [
@@ -176,6 +219,12 @@ def hierarchical_msa(seqs: List[str], k: int = 3) -> List[str]:
 
 
 def percent_identity(seq1: str, seq2: str) -> float:
+    """
+    Compute percent identity between two sequences.
+    :param seq1: First Sequence
+    :param seq2: Second Sequence
+    :return:  Percent identity as a float
+    """
     matches = sum(a == b for a, b in zip(seq1, seq2))
     return matches / len(seq1) * 100.0
 
@@ -211,7 +260,7 @@ def compute_sp_cs(
 
 if __name__ == "__main__":
     # 1) Read raw sequences
-    fasta_path = r"C:\Users\claza\PycharmProjects\Bioinformatics2025\auxiliary\datasetA.fasta"
+    fasta_path = "datasetA.fasta"
     seqs = [str(rec.seq) for rec in SeqIO.parse(fasta_path, "fasta")]
 
     # 2) Custom hierarchical MSA
@@ -221,12 +270,12 @@ if __name__ == "__main__":
     for i, s in enumerate(msa_custom_list):
         print(f">seq{i+1}\n{s}")
     #   Save custom MSA
-    with open("auxiliary/custom_msa.fasta", "w") as f:
+    with open( "../auxiliary/custom_msa.fasta" , "w" ) as f:
         for i, s in enumerate(msa_custom_list):
             f.write(f">seq{i+1}\n{s}\n")
 
     # 3) Load external CLUSTAL alignment
-    clustal_path = r"C:\Users\claza\PycharmProjects\Bioinformatics2025\auxiliary\clustalw.aln"
+    clustal_path = "clustalw.aln"
     msa_ref_old = AlignIO.read(clustal_path, "clustal")
     msa_ref = msa_ref_old.alignment
 
