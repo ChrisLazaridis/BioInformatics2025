@@ -2,48 +2,49 @@ import random
 from typing import List
 
 # For reproducability
-random.seed(42)
 
 patterns = [ "ATTAGA" , "ACGCATTT" , "AGGACTCAA" , "ATTTCAGT" ]
 
 def mutate_pattern(pattern: str, max_mutations: int = 2) -> str:
     """
-    Can apply a maximum of max_mutations to the pattern.
-    - Each mutation: 50% substitution, 50% deletion (both in a random position)
-    :param pattern: Input pattern
-    :param max_mutations: Maximum number of mutations
-    :return: Mutated pattern
+    Μπορεί να αλλάξει το pattern με τυχαία αλλαγή χαρακτήρων ή αφαίρεση χαρακτήρων.
+    Parameters:
+        pattern (str): The pattern to mutate.
+        max_mutations (int): The maximum number of mutations to perform.
+    Returns:
+        str: The mutated pattern.
     """
     pattern_list = list(pattern)
     m = random.randint(0, max_mutations)
-    # Επιλογή θέσεων για μετάλλαξη
     positions = random.sample(range(len(pattern_list)), m)
     for pos in positions:
         if random.random() < 0.5:
-            # Substitution
             pattern_list[pos] = random.choice(['A', 'C', 'G', 'T'])
         else:
-            # Deletion
             pattern_list[pos] = ''
     return ''.join(pattern_list)
 
 
 def create_random_sequence(min_len: int = 1, max_len: int = 2) -> str:
     """
-    Creates a random sequence of A, C, G, T with a random length between min_len and max_len.
-    :param min_len: minimum length of the random string
-    :param max_len: maximum length of the random string
-    :return: Random string of A, C, G, T
+    Δημιουργεί μια τυχαία ακολουθία με μήκος μεταξύ min_len και max_len.
+    Parameters:
+        min_len (int): Μικρότερο δυνατό μήκος της ακολουθίας.
+        max_len (int): Μέγιστο μήκος της ακολουθίας.
+    Returns:
+        str: The generated random sequence.
     """
     k = random.randint(min_len, max_len)
     return ''.join(random.choices(['A', 'C', 'G', 'T'], k=k))
 
 def save_fasta(seqs: List[str], filename: str) -> bool:
     """
-    Saves a list of sequences to a FASTA file.
-    :param seqs: List of sequences
-    :param filename: Name of the output file
-    :return: True if successful, False otherwise
+    Αποθηκεύει μια λίστα ακολουθιών σε αρχείο FASTA.
+    Parameters:
+        seqs (List[str]): Λίστα ακολουθιών.
+        filename (str): Όνομα αρχείου για αποθήκευση.
+    Returns:
+        bool: True αν η αποθήκευση ήταν επιτυχής, αλλιώς False.
     """
     try:
         with open(filename, 'w') as f:
@@ -57,8 +58,11 @@ def save_fasta(seqs: List[str], filename: str) -> bool:
 
 def generate_sequence ( ) -> str :
     """
-    creates a random sequence with a pattern and mutations
-    :return: Created sequence
+    Δημιουργεί μια τυχαία ακολουθία.
+    Parameters:
+        patterns (List[str]): Λίστα προτύπων.
+    Returns:
+        str: Η παραγόμενη ακολουθία.
     """
     seq = create_random_sequence ( 1 , 3 )
     for pat in patterns :
@@ -66,13 +70,14 @@ def generate_sequence ( ) -> str :
         seq += mut
     seq += create_random_sequence ( 1 , 2 )
     return seq
-# print statistics for each dataset
 def print_statistics(dataset: List[str], name: str):
     """
-    Print statistics for a given dataset.
-    :param dataset:
-    :param name:
-    :return:
+    Εκτυπώνει στατιστικά στοιχεία για μια λίστα ακολουθιών.
+    Parameters:
+        dataset (List[str]): Λίστα ακολουθιών.
+        name (str): Όνομα του dataset.
+    Returns:
+        None
     """
     print(f"Statistics for {name}:")
     print(f"  Number of sequences: {len(dataset)}")
@@ -85,7 +90,6 @@ def print_statistics(dataset: List[str], name: str):
 if __name__ == "__main__":
     sequences: List[str] = [generate_sequence() for _ in range(100)]
 
-    # Shuffle και Διαχωρισμός
     random.shuffle(sequences)
     datasetA = sequences[:10]
     datasetB = sequences[10:80]

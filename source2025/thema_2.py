@@ -4,7 +4,9 @@ from Bio import SeqIO, AlignIO
 from Bio.Align import MultipleSeqAlignment
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from Bio.motifs import Motif  # new-style motif API
+from Bio.motifs import Motif
+import os
+import sys
 
 
 def align_seq(
@@ -14,12 +16,18 @@ def align_seq(
     gap_penalty: float = 2.0
 ) -> Tuple[float, List[List[float]], str, str]:
     """
-    Custom global alignment: add match/mismatch scores, subtract gap penalties.
-    :param seq1: First sequence
-    :param seq2: Second sequence
-    :param lookup: Lookup table for match/mismatch scores
-    :param gap_penalty: Gap penalty
-    :return: Tuple of (alignment score, DP table, aligned seq1, aligned seq2)
+    Υλοποίηση του αλγόριθμου καθολικής στοίχισης όπως περιγράφεται στην εργασία.
+    Parameters:
+        seq1: Πρώτη ακολουθία
+        seq2: Δεύτερη ακολουθία
+        lookup: Πίνακας αναζήτησης για τα match/mismatch scores
+        gap_penalty: Ποινή για την εισαγωγή κενών
+    Returns:
+        score: Τελικό σκορ της στοίχισης
+        dp: Πίνακας DP
+        aligned1: Πρώτη στοιχισμένη ακολουθία
+        aligned2: Δεύτερη στοιχισμένη ακολουθία
+
     """
     n, m = len(seq1), len(seq2)
     dp = [[0.0] * (m + 1) for _ in range(n + 1)]
@@ -53,10 +61,12 @@ def align_seq(
 
 def compute_kmer_freq(seq: str, k: int) -> Dict[str, int]:
     """
-    Compute k-mer frequencies in a sequence.
-    :param seq: sequence
-    :param k: length of k
-    :return:  k-mer frequencies
+    Υπολογίζει τις συχνότητες των k-mers σε μια ακολουθία.
+    Parameters:
+        seq: Ακολουθία
+        k: Μήκος του k-mer
+    Returns:
+        freqs: Λεξικό με τις συχνότητες των k-mers
     """
     freqs: Dict[str, int] = {}
     for i in range(len(seq) - k + 1):
@@ -67,10 +77,12 @@ def compute_kmer_freq(seq: str, k: int) -> Dict[str, int]:
 
 def cosine_distance(f1: Dict[str, int], f2: Dict[str, int]) -> float:
     """
-    Compute cosine distance between two frequency dictionaries.
-    :param f1: Frequency dictionary of the first sequence
-    :param f2: Frequency dictionary of the second sequence
-    :return: Cosine distance (1 - cosine similarity)
+    Υπολογίζει την απόσταση συνημιτόνου μεταξύ δύο λεξικών συχνοτήτων k-mers.
+    Parameters:
+        f1: Πρώτο λεξικό συχνοτήτων
+        f2: Δεύτερο λεξικό συχνοτήτων
+    Returns:
+        Απόσταση συνημιτόνου
     """
     keys = set(f1) | set(f2)
     dot = sum(f1.get(k, 0) * f2.get(k, 0) for k in keys)
@@ -81,10 +93,12 @@ def cosine_distance(f1: Dict[str, int], f2: Dict[str, int]) -> float:
 
 def compute_distance_matrix(seqs: List[str], k: int) -> List[List[float]]:
     """
-    Compute distance matrix for a list of sequences using k-mer frequencies.
-    :param seqs: List of sequences
-    :param k:  length of k
-    :return:  Distance matrix
+    Υπολογίζει τον πίνακα αποστάσεων μεταξύ των ακολουθιών με βάση τις συχνότητες k-mers.
+    Parameters:
+        seqs: Λίστα ακολουθιών
+        k: Μήκος του k-mer
+    Returns:
+        Πίνακας αποστάσεων
     """
     n = len(seqs)
     freqs = [compute_kmer_freq(s, k) for s in seqs]
@@ -98,10 +112,12 @@ def compute_distance_matrix(seqs: List[str], k: int) -> List[List[float]]:
 
 def propagate_alignment(aligned_cons: str, aligned_seqs: List[str]) -> List[str]:
     """
-    Propagate gaps in the consensus alignment to the original sequences.
-    :param aligned_cons: Aligned consensus sequence
-    :param aligned_seqs: List of aligned sequences
-    :return: List of aligned sequences with gaps propagated
+    Πράττει gap propagation για τις στοιχισμένες ακολουθίες με βάση την ακολουθία συναίνεσης.
+    Parameters:
+        aligned_cons: Ακολουθία συναίνεσης
+        aligned_seqs: Λίστα στοιχισμένων ακολουθιών
+    Returns:
+        new_aligned: Λίστα με τις νέες στοιχισμένες ακολουθίες
     
     """
     new_aligned: List[str] = []
@@ -127,14 +143,16 @@ def consensus_sequence(
     next_symbol_score: float = 0.5
 ) -> str:
     """
-    Create a consensus sequence from two aligned sequences.
-    :param aln1: First aligned sequence
-    :param aln2: Second aligned sequence
-    :param lookup: Lookup table for match/mismatch scores
-    :param symbol_map: Dictionary mapping consensus symbols to sets of matched characters
-    :param next_symbol_id: List containing next available symbol ID (modified in-place)
-    :param next_symbol_score: Score to use for newly created consensus symbols
-    :return: Consensus sequence string
+    Δημιουργεί μια ακολουθία συναίνεσης από δύο στοιχισμένες ακολουθίες.
+    Parameters:
+        aln1: Πρώτη στοιχισμένη ακολουθία
+        aln2: Δεύτερη στοιχισμένη ακολουθία
+        lookup: Πίνακας αναζήτησης για τα match/mismatch scores
+        symbol_map: Χάρτης συμβόλων
+        next_symbol_id: Επόμενο ID συμβόλου
+        next_symbol_score: Επόμενο σκορ συμβόλου
+    Returns:
+        cons: Ακολουθία συναίνεσης
     """
     cons: List[str] = []
     for a, b in zip(aln1, aln2):
@@ -169,10 +187,12 @@ def consensus_sequence(
 
 def hierarchical_msa(seqs: List[str], k: int = 3) -> List[str]:
     """
-    Custom hierarchical MSA using a distance matrix and a greedy approach.
-    :param seqs: List of sequences
-    :param k:  length of k for k-mer frequency computation
-    :return:  List of aligned sequences
+    Υλοποίηση του αλγόριθμου καθολικής στοίχισης με ιεραρχική προσέγγιση.
+    Parameters:
+        seqs: Λίστα ακολουθιών
+        k: Μήκος του k-mer
+    Returns:
+        results: Λίστα με τις στοιχισμένες ακολουθίες
     """
     lookup: Dict[Tuple[str, str], float] = {}
     symbol_map: Dict[str, Set[str]] = {}
@@ -220,10 +240,12 @@ def hierarchical_msa(seqs: List[str], k: int = 3) -> List[str]:
 
 def percent_identity(seq1: str, seq2: str) -> float:
     """
-    Compute percent identity between two sequences.
-    :param seq1: First Sequence
-    :param seq2: Second Sequence
-    :return:  Percent identity as a float
+    Υπολογίζει το ποσοστό ταυτότητας μεταξύ δύο ακολουθιών.
+    Parameters:
+        seq1: Πρώτη ακολουθία
+        seq2: Δεύτερη ακολουθία
+    Returns:
+        Ποσοστό ταυτότητας
     """
     matches = sum(a == b for a, b in zip(seq1, seq2))
     return matches / len(seq1) * 100.0
@@ -236,6 +258,18 @@ def compute_sp_cs(
     mismatch_score: float = 0.0,
     gap_penalty: float = -2.0
 ) -> Tuple[float, float]:
+    """
+    Υπολογίζει το σκορ SP και CS μεταξύ δύο στοιχισμένων ακολουθιών.
+    Parameters:
+        aln_test: Στοιχισμένη ακολουθία προς αξιολόγηση
+        aln_ref: Στοιχισμένη ακολουθία αναφοράς
+        match_score: Σκορ για ταυτοχρονισμένα στοιχεία
+        mismatch_score: Σκορ για μη ταυτοχρονισμένα στοιχεία
+        gap_penalty: Ποινή για κενά
+    Returns:
+        sp: Σκορ SP
+        cs: Σκορ CS
+    """
     if len(aln_test) != len(aln_ref):
         raise ValueError("Both alignments must have the same number of sequences")
     k = len(aln_test)
@@ -259,27 +293,25 @@ def compute_sp_cs(
     return sp, cs
 
 if __name__ == "__main__":
-    # 1) Read raw sequences
     fasta_path = "datasetA.fasta"
     seqs = [str(rec.seq) for rec in SeqIO.parse(fasta_path, "fasta")]
 
-    # 2) Custom hierarchical MSA
     msa_custom_list = hierarchical_msa(seqs, k=3)
 
     print("=== Custom MSA ===")
     for i, s in enumerate(msa_custom_list):
         print(f">seq{i+1}\n{s}")
-    #   Save custom MSA
-    with open( "../auxiliary/custom_msa.fasta" , "w" ) as f:
+    with open( "custom_msa.fasta" , "w" ) as f:
         for i, s in enumerate(msa_custom_list):
             f.write(f">seq{i+1}\n{s}\n")
 
-    # 3) Load external CLUSTAL alignment
     clustal_path = "clustalw.aln"
+    if not os.path.exists ( clustal_path ) :
+        print ( f"\nNo '{clustal_path}' file found; skipping benchmarking." )
+        sys.exit ( 0 )
     msa_ref_old = AlignIO.read(clustal_path, "clustal")
     msa_ref = msa_ref_old.alignment
 
-    # 4) Build Motif and extract consensus
     motif_ref = Motif(alignment=msa_ref, alphabet="ACGT")
     motif_test = Motif(
         alignment=MultipleSeqAlignment(
@@ -289,11 +321,9 @@ if __name__ == "__main__":
     )
     cons_ref, cons_test = str(motif_ref.consensus), str(motif_test.consensus)
 
-    # 5) Align consensuses
     lookup_simple = {(x, y): 1.0 if x == y else 0.0 for x in "ACGT" for y in "ACGT"}
     _, _, aln_cons_ref, aln_cons_test = align_seq(cons_ref, cons_test, lookup_simple)
 
-    # 6) Compute percent identity
     pid = percent_identity(aln_cons_ref, aln_cons_test)
 
     print("=== Consensus Alignment & PID ===")
@@ -301,31 +331,27 @@ if __name__ == "__main__":
     print(aln_cons_test)
     print(f"PID: {pid:.2f}%")
 
-    # 7) Propagate gaps
     ref_raw = [str(rec.seq).replace('-', '_') for rec in msa_ref_old]
     test_raw = msa_custom_list
     ref_prop = propagate_alignment(aln_cons_ref, ref_raw)
     test_prop = propagate_alignment(aln_cons_test, test_raw)
 
-    # 8) Compute raw SP and CS
     sp_score , cs_fraction = compute_sp_cs ( test_prop , ref_prop )
 
     print ( "\n=== Raw SP and CS ===" )
     print ( f"Sum-of-Pairs: {sp_score:.1f}" )
     print ( f"Column Score: {cs_fraction:.3f}" )
 
-    # 9) Normalize SP and CS
-    k = len ( test_prop )  # number of sequences
-    L = len ( test_prop [ 0 ] )  # number of columns
-    n_pairs = k * (k - 1) // 2  # unique sequence pairs
+    k = len ( test_prop )
+    L = len ( test_prop [ 0 ] )
+    n_pairs = k * (k - 1) // 2
 
-    # Maximum possible SP (match_score = 1.0)
     max_sp = n_pairs * L * 1.0
 
-    sp_norm = sp_score / max_sp  # 0..1
+    sp_norm = sp_score / max_sp
     sp_pct = sp_norm * 100.0
 
-    cs_pct = cs_fraction * 100.0  # already 0..1
+    cs_pct = cs_fraction * 100.0
 
     print ( "\n=== Normalized Metrics ===" )
     print ( f"Normalized SP   : {sp_norm:.3f} ({sp_pct:.1f}%)" )
